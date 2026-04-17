@@ -1,9 +1,6 @@
 --[[ RCCs - RConsole Command Shortner | by S7 softworks | https://github.com/misterlerp/s7nc.softworks | License: S7SL ]]
-
 local RCCs = {Scripts = {}}
-local _executor = (identifyexecutor and identifyexecutor())
-                or (getexecutorname and getexecutorname())
-                or "Universal"
+local _executor = (identifyexecutor and identifyexecutor())    or (getexecutorname and getexecutorname())    or "Universal"
 
 local _cmds = {
     Solara = {
@@ -43,6 +40,7 @@ local function _dsic_check(code)
 end
 
 local _aliases = {
+    ["^%s*wait%((.-)%)%s*$"]    = function(a) return "task.wait(" .. a .. ")"   end,
     ["^%s*transfer%(%s*%)%s*$"] = function() return "RCCs.transfer()"           end,
     ["^%s*title%((.-)%)%s*$"]   = function(a) return "RCCs.name("  .. a .. ")"  end,
     ["^%s*print%((.-)%)%s*$"]   = function(a) return "RCCs.print(" .. a .. ")"  end,
@@ -81,6 +79,7 @@ local function _run(code, ctx)
     local processed = _preprocess(code)
     local env = setmetatable(ctx or {}, { __index = getfenv() })
     env.RCCs = RCCs
+    env.wait = task.wait
 
     local fn, err = loadstring(processed)
     if not fn then
