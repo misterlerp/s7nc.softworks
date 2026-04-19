@@ -480,7 +480,7 @@ async function sendMsg() {
     if (currentMode === 'webhook') {
         const wh = document.getElementById('webhook').value.trim();
         if (!wh) return status.textContent = 'Укажи Webhook!';
-        url = wh.replace('https://discord.com/api', 'https://dems.velori.workers.dev');
+        url = wh.replace('https://discord.com/api', 'https://dems.makito.workers.dev');
     } else {
         const token = document.getElementById('bot-token').value.trim();
         const cid = document.getElementById('channel-id').value.trim();
