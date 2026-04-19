@@ -307,29 +307,65 @@ function editorToMarkdown(editor) {
     editor.childNodes.forEach(walk);
     return md.trim();
 }
-function applyFmt(editor, tag) {
-    editor.focus();
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    const selected = range.toString();
-    const node = (tag === 'pre') ? document.createElement('pre') : 
-                 (tag === 'code') ? document.createElement('code') : 
-                 (tag === 'spoiler') ? document.createElement('span') : null;
-    if (node) {
-        if (tag === 'spoiler') node.className = 'spoiler';
-        node.textContent = selected || '\u200B';
-        range.deleteContents();
-        range.insertNode(node);
-    } else {
-        document.execCommand(tag, false, null);
-    }
-    render();
+function applyFmt(editor, cmd) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const txt = range.toString() || 'text';
+
+  let el;
+
+  switch(cmd) {
+    case 'bold':
+      el = document.createElement('b');
+      break;
+    case 'italic':
+      el = document.createElement('i');
+      break;
+    case 'underline':
+      el = document.createElement('u');
+      break;
+    case 'strike':
+      el = document.createElement('s');
+      break;
+    case 'code':
+      el = document.createElement('code');
+      break;
+    case 'pre':
+      el = document.createElement('pre');
+      break;
+    case 'spoiler':
+      el = document.createElement('span');
+      el.className = 'spoiler';
+      break;
+  }
+
+  if (!el) return;
+
+  el.textContent = txt;
+
+  range.deleteContents();
+  range.insertNode(el);
+  const newRange = document.createRange();
+  newRange.setStartAfter(el);
+  newRange.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(newRange);
+
+  render();
 }
+
 function makeFmtBar(editor) {
-    const bar = document.createElement('div');
-    bar.className = 'fmt-bar';
-    const btns = [{ l: 'B', cmd: 'bold' }, { l: 'I', cmd: 'italic' }, { l: 'U', cmd: 'underline' }, { l: 'S', cmd: 'strikethrough' }, { l: '`code`', cmd: 'code' }, { l: '||sp||', cmd: 'spoiler' }];
+  const bar = document.createElement('div');
+  bar.className = 'fmt-bar';
+  const btns = [
+    { l: 'B', cmd: 'bold', title: 'Жирный' },
+    { l: 'I', cmd: 'italic', title: 'Курсив' },
+    { l: 'U', cmd: 'underline', title: 'Подчеркнутый' },
+    { l: 'S', cmd: 'strike', title: 'Зачеркнутый' },
+    { l: '`code`', cmd: 'code' },
+    { l: '```block```', cmd: 'pre' }, 
+    { l: '||sp||', cmd: 'spoiler' }];
     btns.forEach(({ l, cmd }) => {
         const b = document.createElement('button');
         b.className = 'fb'; b.textContent = l;
@@ -365,7 +401,20 @@ function syncColor(from) {
     render();
 }
 function mdToHtml(md) {
-    return md.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/```\n?([\s\S]*?)\n?```/g, (_, code) => `<pre>${code.trim()}</pre>`).replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^\*\n]+)\*\*/g, '<b>$1</b>').replace(/\*([^\*\n]+)\*/g, '<i>$1</i>').replace(/__([^\_\n]+)__/g, '<u>$1</u>').replace(/~~([^\~\n]+)~~/g, '<s>$1</s>').replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>').replace(/\n/g, '<br>');
+    const blocks = [];
+    md = md.replace(/```([\s\S]*?)```/g, (_, code) => { blocks.push(`<pre>${code.trim()}</pre>`); return `@@BLOCK_${blocks.length - 1}@@`; });
+    md = md
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^\*\n]+)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^\*\n]+)\*/g, '<i>$1</i>')
+        .replace(/__([^\_\n]+)__/g, '<u>$1</u>')
+        .replace(/~~([^\~\n]+)~~/g, '<s>$1</s>')
+        .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
+        .replace(/\n/g, '<br>');
+    md = md.replace(/@@BLOCK_(\d+)@@/g, (_, i) => blocks[i]);
+    return md;
 }
 function render() {
     const uname = document.getElementById('username').value || 'Bot';
