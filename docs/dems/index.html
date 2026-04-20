@@ -485,7 +485,7 @@ async function sendMsg() {
         const token = document.getElementById('bot-token').value.trim();
         const cid = document.getElementById('channel-id').value.trim();
         if (!token || !cid) return status.textContent = 'Укажи Токен и ID!';
-        url = `https://dems.velori.workers.dev/channels/${cid}/messages`;
+        url = `https://dems.makito.workers.dev/channels/${cid}/messages`;
         headers['Authorization'] = `Bot ${token}`;
     }
     if (file) {
